@@ -509,15 +509,13 @@ function App() {
               窗口模式
             </Button>
           </Button.Group>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+          
           {viewMode === 'window' && (
             <Menu 
               mode="horizontal" 
               selectedKeys={[selectedMachine]} 
               onClick={({key}) => setSelectedMachine(key)}
-              style={{ flex: 1, marginRight: 20 }}
+              style={{ marginLeft: 20 }}
             >
               {Object.entries(machines).map(([hostname, machineData]) => (
                 <Menu.Item key={hostname}>
@@ -527,7 +525,9 @@ function App() {
               ))}
             </Menu>
           )}
-          
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <Button
             type="text"
             icon={<SettingOutlined />}
