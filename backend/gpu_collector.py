@@ -160,17 +160,39 @@ async def get_docker_containers():
                 continue
             container_id, name, status, image = line.strip().split('|')
             # 获取内存使用
-            memory_usage = await get_container_stats(container_id)  # 使用缓存
+            memory_usage = await get_container_stats(container_id)
+            
+            # 获取 GPU 设备信息
+            gpu_devices = await get_container_gpu_devices(container_id)
+            
             containers.append({
                 'id': container_id,
                 'name': name,
                 'status': status,
                 'image': image,
-                'memoryUsage': memory_usage
+                'memoryUsage': memory_usage,
+                'gpuDevices': gpu_devices  # 添加 GPU 设备信息
             })
         return containers
     except Exception as e:
         print(f"获取Docker容器信息失败: {e}")
+        return []
+
+async def get_container_gpu_devices(container_id):
+    """获取容器使用的 GPU 设备"""
+    try:
+        result = await asyncio.create_subprocess_exec(
+            'docker', 'inspect', '--format', '{{range .HostConfig.DeviceRequests}}{{.DeviceIDs}}{{end}}', container_id,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, _ = await result.communicate()
+        devices = stdout.decode().strip()
+        if devices:
+            return devices
+        else:
+            return []
+    except Exception as e:
+        print(f"获取容器GPU设备失败: {e}")
         return []
 
 async def get_system_info():

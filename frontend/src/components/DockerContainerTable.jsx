@@ -110,6 +110,21 @@ const DockerContainerTable = ({ containers }) => {
             dataIndex: 'image',
             key: 'image',
             ellipsis: true
+          },
+          {
+            title: 'GPU 设备',
+            dataIndex: 'gpuDevices',
+            key: 'gpuDevices',
+            render: (devices) => {
+              if (typeof devices === 'string') {
+                try {
+                  devices = JSON.parse(devices); // 将字符串解析为数组
+                } catch (error) {
+                  devices = []; // 解析失败时替换为空数组
+                }
+              }
+              return devices.join(', ') || '-';
+            }
           }
         ]}
         size="small"
