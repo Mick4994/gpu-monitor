@@ -3,6 +3,7 @@ import { Table, Tag, Tooltip, Button, message } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 
 const formatBytes = (bytes, decimals = 2) => {
+  if (!bytes || isNaN(bytes)) return '0 B';
   if (bytes === 0) return '0 B';
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
@@ -12,17 +13,39 @@ const formatBytes = (bytes, decimals = 2) => {
 };
 
 const DockerContainerTable = ({ containers }) => {
+  // 过滤只显示运行中的容器
+  const runningContainers = containers.filter(container => 
+    container.status.includes('Up')
+  );
+
   const handleCopyCommand = (containerId) => {
-    navigator.clipboard.writeText(`docker exec -it ${containerId} bash`)
-      .then(() => message.success('命令已复制到剪贴板'))
-      .catch(() => message.error('复制失败'));
+    const command = `docker exec -it ${containerId} bash`;
+    
+    if (navigator.clipboard) {
+      // 使用 Clipboard API
+      navigator.clipboard.writeText(command)
+        .then(() => message.success('命令已复制到剪贴板'))
+        .catch(() => message.error('复制失败'));
+    } else {
+      // 备用方案：使用临时文本框
+      const textArea = document.createElement('textarea');
+      textArea.value = command;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        message.success('命令已复制到剪贴板');
+      } catch (err) {
+        message.error('复制失败');
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   return (
     <div style={{ marginTop: 16 }}>
-      <h4>Docker 容器</h4>
       <Table
-        dataSource={containers}
+        dataSource={runningContainers}
         columns={[
           {
             title: '容器ID',

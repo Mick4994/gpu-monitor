@@ -6,6 +6,12 @@ import requests
 import socket
 import subprocess
 from datetime import datetime
+import asyncio  # 添加异步支持
+
+# 添加全局变量用于缓存
+docker_memory_cache = {}
+last_docker_update_time = 0
+docker_update_interval = 30  # 每30秒更新一次
 
 def get_process_info(pid):
     """获取进程的详细信息"""
@@ -107,28 +113,67 @@ def get_screen_sessions():
         print(f"获取screen会话失败: {e}")
         return []
 
-def get_docker_containers():
+async def get_container_stats(container_id):
+    """获取单个容器的资源使用统计"""
+    global docker_memory_cache, last_docker_update_time
+    current_time = time.time()
+
+    # 检查缓存是否过期
+    if current_time - last_docker_update_time < docker_update_interval and container_id in docker_memory_cache:
+        return docker_memory_cache[container_id]
+
+    try:
+        result = await asyncio.create_subprocess_exec(
+            'docker', 'stats', '--no-stream', '--format', '{{.MemUsage}}', container_id,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, _ = await result.communicate()
+        mem_usage = stdout.decode().strip().split(' / ')[0]
+        # 转换单位到字节
+        if mem_usage.endswith('KiB'):
+            memory = int(float(mem_usage[:-3]) * 1024)
+        elif mem_usage.endswith('MiB'):
+            memory = int(float(mem_usage[:-3]) * 1024 * 1024)
+        elif mem_usage.endswith('GiB'):
+            memory = int(float(mem_usage[:-3]) * 1024 * 1024 * 1024)
+        else:
+            memory = 0
+
+        # 更新缓存
+        docker_memory_cache[container_id] = memory
+        last_docker_update_time = current_time  # 更新最后更新时间
+        return memory
+    except Exception:
+        return 0
+
+async def get_docker_containers():
     """获取Docker容器信息"""
     try:
-        result = subprocess.run(['docker', 'ps', '-a', '--format', '{{.ID}}|{{.Names}}|{{.Status}}|{{.Image}}'], 
-                              capture_output=True, text=True)
+        result = await asyncio.create_subprocess_exec(
+            'docker', 'ps', '-a', '--format', '{{.ID}}|{{.Names}}|{{.Status}}|{{.Image}}', 
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, _ = await result.communicate()
         containers = []
-        for line in result.stdout.split('\n'):
+        for line in stdout.decode().strip().split('\n'):
             if not line.strip():
                 continue
             container_id, name, status, image = line.strip().split('|')
+            # 获取内存使用
+            memory_usage = await get_container_stats(container_id)  # 使用缓存
             containers.append({
                 'id': container_id,
                 'name': name,
                 'status': status,
-                'image': image
+                'image': image,
+                'memoryUsage': memory_usage
             })
         return containers
     except Exception as e:
         print(f"获取Docker容器信息失败: {e}")
         return []
 
-def get_system_info():
+async def get_system_info():
     """获取系统信息"""
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
@@ -144,16 +189,15 @@ def get_system_info():
         'disk_percent': disk.percent,
         'ip_address': get_ip_address(),
         'screen_sessions': get_screen_sessions(),  # 添加screen会话信息
-        'docker_containers': get_docker_containers()  # 添加docker容器信息
+        'docker_containers': await get_docker_containers()  # 异步调用
     }
 
-def collect_gpu_info():
+async def collect_gpu_info():
     gpu_stats = gpustat.GPUStatCollection.new_query()
     gpu_data = []
     
     # 获取所有进程信息
     all_processes = get_all_processes()
-    # 创建进程映射，用于快速查找
     process_map = {proc['pid']: proc for proc in all_processes}
     
     # 处理GPU信息
@@ -162,7 +206,6 @@ def collect_gpu_info():
         for proc in gpu.processes:
             pid = proc['pid']
             if pid in process_map:
-                # 更新进程的GPU相关信息
                 process_map[pid]['is_gpu_process'] = True
                 process_map[pid]['gpu_memory_usage'] = proc['gpu_memory_usage']
                 process_map[pid]['gpu_id'] = gpu.index
@@ -179,7 +222,7 @@ def collect_gpu_info():
         })
     
     # 添加系统信息
-    system_info = get_system_info()
+    system_info = await get_system_info()  # 异步调用
     system_info['processes'] = all_processes  # 添加所有进程信息
     
     return {
@@ -197,10 +240,13 @@ def report_to_central(data, central_server='http://192.168.2.119:7864'):
         print(f"报告数据失败: {e}")
         return False
 
-if __name__ == '__main__':
+async def main():
     while True:
-        data = collect_gpu_info()
+        data = await collect_gpu_info()  # 异步调用
         success = report_to_central(data)
         print(f"数据收集时间: {data['timestamp']}")
         print(f"报告状态: {'成功' if success else '失败'}")
-        time.sleep(1)  # 每1秒收集一次数据
+        await asyncio.sleep(1)  # 每1秒收集一次数据
+
+if __name__ == '__main__':
+    asyncio.run(main())  # 使用异步主函数
