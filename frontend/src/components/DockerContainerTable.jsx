@@ -117,15 +117,16 @@ const DockerContainerTable = ({ containers }) => {
             key: 'gpuDevices',
             render: (devices) => {
               if (typeof devices === 'string') {
-                try {
-                  devices = JSON.parse(devices); // 将字符串解析为数组
+                devices = JSON.parse(devices); // 将字符串解析为数组
+              }
+              try {
+                  return devices.join(', ') || '-';
                 } catch (error) {
                   devices = []; // 解析失败时替换为空数组
+                  return '-';
                 }
               }
-              return devices.join(', ') || '-';
             }
-          }
         ]}
         size="small"
         pagination={false}

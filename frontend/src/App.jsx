@@ -130,7 +130,7 @@ const getTimeAgo = (timestamp) => {
   const diff = now.diff(updateTime);
 
   if (diff < 0) {
-    return '刚刚'; // 如果时间差为负，则显示“刚刚”
+    return '刚刚'; // 如果时间差为负，则显示"刚刚"
   }
 
   const seconds = Math.floor(diff / 1000);
@@ -713,6 +713,7 @@ function App() {
               {renderProcessSearch(machineData)}
               <div style={{ marginBottom: machineData.gpu_data.length > 0 ? 16 : 0 }}>
                 {renderScreenSessions(machineData)}
+                {renderDockerContainers(machineData)}
               </div>
               
               <Row gutter={[16, 16]}>
