@@ -157,7 +157,11 @@ function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [compactModes, setCompactModes] = useState({});
   const [searchText, setSearchText] = useState('');
-  const [viewMode, setViewMode] = useState('list'); // 默认为列表模式
+  const [viewMode, setViewMode] = useState(() => {
+    const savedSettings = localStorage.getItem('gpu-monitor-settings');
+    const defaultViewMode = savedSettings ? JSON.parse(savedSettings).defaultViewMode : 'list';
+    return defaultViewMode;
+  }); // 修改初始视图模式
   const [selectedMachine, setSelectedMachine] = useState(null);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [settings, setSettings] = useState(() => {
