@@ -77,6 +77,7 @@ const App = () => {
             setCompactModes={setCompactModes}
             searchText={searchText}
             setSearchText={setSearchText}
+            settings={settings}
           />
         ) : (
           <WindowView
@@ -84,6 +85,7 @@ const App = () => {
             machines={machines}
             searchText={searchText}
             setSearchText={setSearchText}
+            settings={settings}
           />
         )}
         <SettingsModal

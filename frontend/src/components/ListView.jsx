@@ -6,7 +6,7 @@ import { formatBytes, getTimeAgo, getColorIndex, offlineCardStyle, stripesOverla
 import { AutoComplete } from 'antd';
 import DockerContainerTable from './DockerContainerTable';
 
-const ListView = ({ machines, compactModes, setCompactModes, searchText, setSearchText }) => {
+const ListView = ({ machines, compactModes, setCompactModes, searchText, setSearchText, settings }) => {
   const handleCompactModeChange = (hostname, value) => {
     setCompactModes(prev => ({
       ...prev,
@@ -254,6 +254,8 @@ const ListView = ({ machines, compactModes, setCompactModes, searchText, setSear
                     parentBackground={PASTEL_COLORS[getColorIndex(hostname)].card}
                     isOffline={!machineData.is_online}
                     compactMode={isCompact}
+                    settings={settings}
+                    hostname={hostname}
                   />
                 </Col>
               ))}

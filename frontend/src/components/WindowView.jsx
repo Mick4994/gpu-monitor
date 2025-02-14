@@ -6,7 +6,7 @@ import DockerContainerTable from './DockerContainerTable';
 import { Modal, Button, Tooltip, Table } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 
-const WindowView = ({ selectedMachine, machines, searchText, setSearchText }) => {
+const WindowView = ({ selectedMachine, machines, searchText, setSearchText, settings }) => {
   if (!selectedMachine || !machines[selectedMachine]) {
     return (
       <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -242,6 +242,8 @@ const WindowView = ({ selectedMachine, machines, searchText, setSearchText }) =>
                   parentBackground={PASTEL_COLORS[getColorIndex(hostname)].card}
                   isOffline={!machineData.is_online}
                   compactMode={false}
+                  settings={settings}
+                  hostname={hostname}
                 />
               </Col>
             ))}
