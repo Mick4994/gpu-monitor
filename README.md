@@ -178,7 +178,7 @@ yarn start
 客户端向服务器报告 GPU 和系统状态数据。
 
 请求体:
-```json
+```bash
 {
   "hostname": "string",          // 主机名
   "timestamp": "string",         // ISO 格式的时间戳
@@ -233,7 +233,7 @@ yarn start
 ```
 
 响应:
-```json
+```bash
 {
   "status": "success",
   "message": "Data received"
@@ -244,7 +244,7 @@ yarn start
 获取所有机器的 GPU 和系统状态数据。
 
 响应:
-```json
+```bash
 {
   "machines": {
     "hostname1": {
@@ -280,7 +280,7 @@ yarn start
 
 ### 错误响应
 所有接口在发生错误时都会返回以下格式:
-```json
+```bash
 {
   "status": "error",
   "message": "错误信息描述"
